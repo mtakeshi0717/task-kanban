@@ -25,6 +25,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - CSS は Turbopack の `rules` で `@tailwindcss/turbopack` ローダー経由で処理される（PostCSS ではない）。スタイルは `src/app/globals.css` と Tailwind のユーティリティクラスで記述。
 - `src/app/layout.tsx` は `LayoutProps<"/">` というグローバル型ヘルパーを使用（型付きルート）。フォントは `next/font/google` の Geist。
 
+## Supabase
+
+- 接続先は Supabase プロジェクト `task-kanban`（ref: `aeeohitbcpsmbodikyhp`、ap-northeast-1）。プロジェクト情報は Supabase MCP で確認する。
+- 環境変数は `.env.example` にキーのみ記載（`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`）。実際の値は `.env.local`（git 管理外）に置く。
+- クライアントは `src/lib/supabase/client.ts` の `supabase`（`@supabase/supabase-js`）を使う。環境変数が未設定だと import 時に例外を投げる。
+- `src/instrumentation.ts` の `register` がサーバー起動時に一度だけ `/auth/v1/health` へ接続確認を行う。正常時はログを出さず、異常時（環境変数未設定・HTTP エラー・通信失敗）のみ `console.error` で `[Supabase]` 接頭辞付きのログを出す。これは禁止事項の `console.log` 制限に対する意図的な例外ではなく、エラー出力のみである点に注意。
+- `instrumentation.ts` は Node.js ランタイム（`NEXT_RUNTIME === "nodejs"`）でのみ処理する。
+- 接続確認ロジックは現状テスト未整備。
+
 ## テスト
 
 - Vitest + React Testing Library + jsdom。設定は `vitest.config.mts`、jest-dom マッチャーは `vitest.setup.ts` で有効化。
