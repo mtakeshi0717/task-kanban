@@ -1,21 +1,29 @@
 import type { ReactNode } from "react";
+import {
+  Dialog as DialogRoot,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type DialogProps = {
   label: string;
+  description?: string;
+  onClose: () => void;
   children: ReactNode;
 };
 
-export default function Dialog({ label, children }: DialogProps) {
+export default function Dialog({ label, description, onClose, children }: DialogProps) {
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900"
-      >
+    <DialogRoot open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{label}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
+        </DialogHeader>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </DialogRoot>
   );
 }

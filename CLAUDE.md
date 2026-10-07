@@ -13,6 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/components/KanbanBoard.tsx` — `"use client"`。タスクを state に保持し、各操作の成功後に state を更新して即時反映する（再取得はしない）。初回のみ `useEffect` で取得。
 - `src/components/TaskForm.tsx` — 追加／編集共用フォーム。`statusLabels`（todo→未着手、doing→進行中、done→完了）もここで export。
 - `src/components/Dialog.tsx` / `ConfirmDialog.tsx` — `role="dialog"` の自前モーダル（編集・削除確認用）。`window.confirm` は使わない。
+- `src/components/ui/` — shadcn/ui のコンポーネント（button / card / input / textarea / label / select / dialog / badge / alert）。CLI が生成するコードなので、手で編集するより `npx shadcn@latest add` で追加・更新する。
+- `src/lib/utils.ts` — shadcn の `cn`（クラス名結合）ヘルパー。`cn` パッケージから再エクスポートしている。
 - `src/lib/tasks.ts` — データ層（`fetchTasks` / `createTask` / `updateTask` / `deleteTask`、`Task` 型、`taskStatuses`）。エラーは `Error` を throw。
 - `src/test/fakeSupabase.ts` — テスト用のメモリ上フェイク（後述）。
 
@@ -33,6 +35,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `next.config.ts` で `cacheComponents: true` と `partialPrefetching: true` が有効。キャッシュ／データ取得まわりのコードは、この設定に対応した Next.js 16 のドキュメントに従って書くこと。
 - CSS は Turbopack の `rules` で `@tailwindcss/turbopack` ローダー経由で処理される（PostCSS ではない）。スタイルは `src/app/globals.css` と Tailwind のユーティリティクラスで記述。
+- shadcn/ui を導入済み（`components.json`: スタイル `base-nova`、ベースカラー neutral、CSS 変数方式、アイコンは lucide、`ui` エイリアスは `@/components/ui`）。コンポーネントは Radix ではなく `@base-ui/react` ベース。追加は `npx shadcn@latest add <名前>`、事前確認は `--dry-run`。使い方は Context7 MCP（`/shadcn-ui/ui`）で最新のドキュメントを確認する。
+- shadcn のテーマ変数（`--background` `--primary` など）は `src/app/globals.css` に定義されている。ダークモードは `prefers-color-scheme` ではなく `.dark` クラス方式（`@custom-variant dark`）。`@theme inline` の `--font-sans` は `var(--font-geist-sans)` を指す。`shadcn init` / `add` が書き換えた場合は自己参照（`var(--font-sans)`）になっていないか確認する。
+- `Dialog.tsx` / `ConfirmDialog.tsx` / `TaskForm.tsx` / `KanbanBoard.tsx` は shadcn/ui で構成済み（`Dialog.tsx` は shadcn の Dialog のラッパー。確認ダイアログも `role="dialog"` を保つため AlertDialog ではなく Dialog を使う）。UI を変えるときは下記「UI テストのクエリ規約」の名前（role・aria-label）を保つか、テストも合わせて更新する。
+- ステータスの色は `globals.css` の `--status-todo/doing/done`（`bg-status-*`）で定義。ステータスを増減する場合はここも揃える。
+- shadcn の Select は base-ui 製で `combobox` + `option`。モーダル表示中は背後が `aria-hidden` になる。テストでは Select の option に `pointerDown/mouseDown/pointerUp/mouseUp/click` を順に発火し、列は `getByRole("region", { name, hidden: true })` で取得する（`KanbanBoard.test.tsx` の `selectStatus` / `getColumn` 参照）。
 - `src/app/layout.tsx` は `LayoutProps<"/">` というグローバル型ヘルパーを使用（型付きルート）。フォントは `next/font/google` の Geist。
 
 ## Supabase
@@ -64,7 +71,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `@testing-library/user-event` は未導入。操作は `fireEvent` と `findBy*` / `waitFor` で書く。
 - Supabase クライアントは `vi.mock("@/lib/supabase/client", async () => ({ supabase: (await import("@/test/fakeSupabase")).fakeSupabase }))` で差し替える。`Home` や `KanbanBoard` を描画するテストは必ずこのモックが必要（無いと環境変数未設定で import 時に例外）。
 - `fakeDb`（`src/test/fakeSupabase.ts`）: `reset(rows)` で初期データを設定（`beforeEach` で必ず呼ぶ）、`failWith(message)` で以降のクエリを失敗させる、`getRows()` で DB 側の状態を検証する。`tasks.ts` で使うクエリメソッドを増やした場合（`.eq` 以外の絞り込み等）は、フェイクにも実装を足すこと。
-- UI テストのクエリ規約: 列は `region`（名前＝未着手/進行中/完了）、追加フォームは `form`（名前「タスク追加」）、編集は `dialog`「タスクを編集」、削除確認は `dialog`「削除の確認」（ボタン「削除する」/「キャンセル」）、カードのボタンは aria-label `「{タイトル}を編集」「{タイトル}を削除」`。UI を変えるときはこの名前を保つか、テストも合わせて更新する。
+- UI テストのクエリ規約: 列は `region`（名前＝未着手/進行中/完了）、追加フォームは `form`（名前「タスク追加」、ステータスは `combobox`「ステータス」）、編集は `dialog`「タスクを編集」、削除確認は `dialog`「削除の確認」（ボタン「削除する」/「キャンセル」）、カードのボタンは aria-label `「{タイトル}を編集」「{タイトル}を削除」`。UI を変えるときはこの名前を保つか、テストも合わせて更新する。
 - フォームは `noValidate` で、検証は `tasks.ts` 側のエラーをフォーム内の `role="alert"` に表示する方式（jsdom の標準検証に依存しない）。
 
 ## コーディングルール
@@ -76,6 +83,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - コンポーネントは関数コンポーネントで記述してください
 - 変数名・関数名はキャメルケースで書いてください
 - コミットメッセージは日本語で書いてください
+
+## デザインルール
+- UI は shadcn/ui のコンポーネント（`@/components/ui/`）で組む。素の `<button>` / `<input>` / `<select>` / 自前モーダルは使わない。足りないものは `npx shadcn@latest add` で追加し、`ui/` 配下は手編集しない。
+- 配色は白とグレーのモノトーン。色は `globals.css` のテーマ変数（`bg-background` `bg-muted` `text-muted-foreground` `border` など）を使い、`zinc-*` など生の色クラスや任意の色コードを直接書かない。
+- ステータスの区別は `--status-todo/doing/done`（`bg-status-*`）のグレーの濃淡で表す。色相のある色は使わない。エラー表示（`text-destructive` / `Alert variant="destructive"`）のみ赤を許可する。
+- 破壊的操作（削除など）のボタンも色では強調せず、確認ダイアログで防ぐ。
+- ダークモードはテーマ変数に任せ、`dark:` の個別指定は原則書かない（`.dark` クラス方式）。
+- 看板の3列（未着手・進行中・完了）は常に横並び（`grid-cols-3`）。狭い画面では縦に積まず、列に最小幅を持たせて横スクロールにする。
+- カード・列は `Card` / `bg-muted/50` + 角丸（`rounded-xl`）で統一し、余白は Tailwind の `gap-*` / `p-*` で揃える。アイコンは lucide、ボタン内は `<Icon />` + ラベルの形にする。
+- フォーム項目は `Label` の `htmlFor` と入力の `id`（`useId`）で関連付ける。アイコンのみのボタンには `aria-label` を付ける。
+- UI 変更後は Playwright MCP でデスクトップ幅・モバイル幅・ダークの表示と主要操作（追加・編集・削除）を確認する。
 
 ## テストルール
 - 網羅性: 正常系・異常系・境界値を検討してください

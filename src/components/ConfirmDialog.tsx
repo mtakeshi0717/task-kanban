@@ -1,4 +1,5 @@
 import Dialog from "@/components/Dialog";
+import { Button } from "@/components/ui/button";
 
 type ConfirmDialogProps = {
   label: string;
@@ -16,23 +17,14 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <Dialog label={label}>
-      <p className="mb-6 text-zinc-800 dark:text-zinc-100">{message}</p>
+    <Dialog label={label} description={message} onClose={onCancel}>
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
+        <Button type="button" variant="outline" onClick={onCancel}>
           キャンセル
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-        >
+        </Button>
+        <Button type="button" variant="default" onClick={onConfirm}>
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </Dialog>
   );

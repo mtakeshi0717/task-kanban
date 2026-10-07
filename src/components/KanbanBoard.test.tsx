@@ -18,7 +18,18 @@ const createSampleTask = (overrides: Partial<Task>): Task => ({
   ...overrides,
 });
 
-const getColumn = (name: string) => screen.getByRole("region", { name });
+// モーダル表示中は背後の列が aria-hidden になるため、hidden: true で列を取得する
+const getColumn = (name: string) => screen.getByRole("region", { name, hidden: true });
+
+const selectStatus = async (container: HTMLElement, statusLabel: string) => {
+  fireEvent.click(within(container).getByRole("combobox", { name: "ステータス" }));
+  const option = await screen.findByRole("option", { name: statusLabel });
+  fireEvent.pointerDown(option);
+  fireEvent.mouseDown(option);
+  fireEvent.pointerUp(option);
+  fireEvent.mouseUp(option);
+  fireEvent.click(option);
+};
 
 const renderBoard = async () => {
   render(<KanbanBoard />);
@@ -85,7 +96,7 @@ describe("追加", () => {
     const form = screen.getByRole("form", { name: "タスク追加" });
 
     fireEvent.change(within(form).getByLabelText("タイトル"), { target: { value: "確認する" } });
-    fireEvent.change(within(form).getByLabelText("ステータス"), { target: { value: "done" } });
+    await selectStatus(form, "完了");
     fireEvent.click(within(form).getByRole("button", { name: "追加" }));
 
     expect(await within(getColumn("完了")).findByText("確認する")).toBeInTheDocument();
@@ -127,7 +138,7 @@ describe("編集", () => {
 
     expect(within(dialog).getByLabelText("タイトル")).toHaveValue("実装する");
     expect(within(dialog).getByLabelText("説明")).toHaveValue("画面を作る");
-    expect(within(dialog).getByLabelText("ステータス")).toHaveValue("doing");
+    expect(within(dialog).getByRole("combobox", { name: "ステータス" })).toHaveTextContent("進行中");
   });
 
   test("タイトルと説明を変更して保存すると、すぐ一覧に反映されダイアログが閉じる", async () => {
@@ -148,7 +159,7 @@ describe("編集", () => {
     await renderBoard();
     const dialog = openEditDialog("設計する");
 
-    fireEvent.change(within(dialog).getByLabelText("ステータス"), { target: { value: "doing" } });
+    await selectStatus(dialog, "進行中");
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
 
     expect(await within(getColumn("進行中")).findByText("設計する")).toBeInTheDocument();
@@ -159,7 +170,7 @@ describe("編集", () => {
     await renderBoard();
     const dialog = openEditDialog("リリースする");
 
-    fireEvent.change(within(dialog).getByLabelText("ステータス"), { target: { value: "todo" } });
+    await selectStatus(dialog, "未着手");
     fireEvent.click(within(dialog).getByRole("button", { name: "保存" }));
 
     expect(await within(getColumn("未着手")).findByText("リリースする")).toBeInTheDocument();

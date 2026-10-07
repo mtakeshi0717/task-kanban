@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { taskStatuses } from "@/lib/tasks";
 import type { TaskInput, TaskStatus } from "@/lib/tasks";
 
@@ -10,6 +15,8 @@ export const statusLabels: Record<TaskStatus, string> = {
   doing: "進行中",
   done: "完了",
 };
+
+const statusItems = taskStatuses.map((status) => ({ value: status, label: statusLabels[status] }));
 
 type TaskFormProps = {
   formLabel: string;
@@ -22,9 +29,6 @@ type TaskFormProps = {
 
 const emptyValues: TaskInput = { title: "", description: "", status: "todo" };
 
-const fieldClass =
-  "w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800";
-
 export default function TaskForm({
   formLabel,
   submitLabel,
@@ -36,6 +40,7 @@ export default function TaskForm({
   const [values, setValues] = useState<TaskInput>(initialValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fieldId = useId();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,61 +59,58 @@ export default function TaskForm({
   };
 
   return (
-    <form aria-label={formLabel} onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        タイトル
-        <input
+    <form aria-label={formLabel} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${fieldId}-title`}>タイトル</Label>
+        <Input
+          id={`${fieldId}-title`}
           type="text"
           value={values.title}
           onChange={(event) => setValues({ ...values, title: event.target.value })}
-          className={fieldClass}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        説明
-        <textarea
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${fieldId}-description`}>説明</Label>
+        <Textarea
+          id={`${fieldId}-description`}
           value={values.description}
           onChange={(event) => setValues({ ...values, description: event.target.value })}
           rows={2}
-          className={fieldClass}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        ステータス
-        <select
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${fieldId}-status`}>ステータス</Label>
+        <Select
+          items={statusItems}
           value={values.status}
-          onChange={(event) => setValues({ ...values, status: event.target.value as TaskStatus })}
-          className={fieldClass}
+          onValueChange={(status) => status && setValues({ ...values, status: status as TaskStatus })}
         >
-          {taskStatuses.map((status) => (
-            <option key={status} value={status}>
-              {statusLabels[status]}
-            </option>
-          ))}
-        </select>
-      </label>
+          <SelectTrigger id={`${fieldId}-status`} className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false}>
+            {statusItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {errorMessage && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {errorMessage}
         </p>
       )}
       <div className="flex justify-end gap-2">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             キャンセル
-          </button>
+          </Button>
         )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
+        <Button type="submit" disabled={isSubmitting}>
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );

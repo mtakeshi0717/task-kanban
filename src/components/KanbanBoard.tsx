@@ -1,11 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AlertCircle, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import Dialog from "@/components/Dialog";
 import TaskForm, { statusLabels } from "@/components/TaskForm";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createTask, deleteTask, fetchTasks, taskStatuses, updateTask } from "@/lib/tasks";
-import type { Task, TaskInput } from "@/lib/tasks";
+import type { Task, TaskInput, TaskStatus } from "@/lib/tasks";
+import { cn } from "@/lib/utils";
+
+const statusDotClass: Record<TaskStatus, string> = {
+  todo: "bg-status-todo",
+  doing: "bg-status-doing",
+  done: "bg-status-done",
+};
 
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -70,70 +82,90 @@ export default function KanbanBoard() {
   };
 
   if (isLoading) {
-    return <p>読み込み中...</p>;
+    return <p className="text-muted-foreground">読み込み中...</p>;
   }
 
   if (loadError) {
     return (
-      <p role="alert" className="text-red-600">
-        {loadError}
-      </p>
+      <Alert variant="destructive">
+        <AlertCircle />
+        <AlertDescription>{loadError}</AlertDescription>
+      </Alert>
     );
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="max-w-md rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="mb-3 font-semibold">タスクを追加</h2>
-        <TaskForm formLabel="タスク追加" submitLabel="追加" resetOnSuccess onSubmit={handleCreate} />
-      </section>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>タスクを追加</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TaskForm formLabel="タスク追加" submitLabel="追加" resetOnSuccess onSubmit={handleCreate} />
+        </CardContent>
+      </Card>
 
       {actionError && (
-        <p role="alert" className="text-red-600">
-          {actionError}
-        </p>
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-3 gap-4 overflow-x-auto [&>section]:min-w-64">
         {taskStatuses.map((status) => {
           const columnTasks = tasks.filter((task) => task.status === status);
           return (
             <section
               key={status}
               aria-label={statusLabels[status]}
-              className="rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900"
+              className="flex flex-col gap-3 rounded-xl bg-muted/50 p-3 ring-1 ring-foreground/5"
             >
-              <h2 className="mb-3 font-semibold">{statusLabels[status]}</h2>
+              <div className="flex items-center gap-2 px-1">
+                <span aria-hidden className={cn("size-2 rounded-full", statusDotClass[status])} />
+                <h2 className="text-sm font-semibold">{statusLabels[status]}</h2>
+                <Badge variant="secondary" className="ml-auto">
+                  {columnTasks.length}
+                </Badge>
+              </div>
               {columnTasks.length === 0 ? (
-                <p className="text-sm text-zinc-500">タスクはありません</p>
+                <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+                  タスクはありません
+                </p>
               ) : (
                 <ul className="flex flex-col gap-3">
                   {columnTasks.map((task) => (
                     <li key={task.id}>
-                      <article className="rounded border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                        <h3 className="font-medium">{task.title}</h3>
-                        {task.description && (
-                          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{task.description}</p>
-                        )}
-                        <div className="mt-3 flex gap-2 text-sm">
-                          <button
+                      <Card size="sm" className="shadow-xs">
+                        <CardHeader>
+                          <CardTitle>
+                            <h3>{task.title}</h3>
+                          </CardTitle>
+                          {task.description && <CardDescription>{task.description}</CardDescription>}
+                        </CardHeader>
+                        <CardContent className="flex justify-end gap-1">
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             aria-label={`${task.title}を編集`}
                             onClick={() => setEditingTask(task)}
-                            className="rounded border border-zinc-300 px-3 py-1 dark:border-zinc-600"
                           >
+                            <Pencil />
                             編集
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             aria-label={`${task.title}を削除`}
                             onClick={() => setDeletingTask(task)}
-                            className="rounded border border-red-300 px-3 py-1 text-red-600 dark:border-red-800"
                           >
+                            <Trash2 />
                             削除
-                          </button>
-                        </div>
-                      </article>
+                          </Button>
+                        </CardContent>
+                      </Card>
                     </li>
                   ))}
                 </ul>
@@ -144,7 +176,7 @@ export default function KanbanBoard() {
       </div>
 
       {editingTask && (
-        <Dialog label="タスクを編集">
+        <Dialog label="タスクを編集" onClose={() => setEditingTask(null)}>
           <TaskForm
             formLabel="編集フォーム"
             submitLabel="保存"
