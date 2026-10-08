@@ -112,7 +112,7 @@ export default function KanbanBoard() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-3 gap-4 overflow-x-auto [&>section]:min-w-64">
+      <div className="grid max-w-md grid-cols-1 gap-4">
         {taskStatuses.map((status) => {
           const columnTasks = tasks.filter((task) => task.status === status);
           return (

@@ -90,7 +90,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ステータスの区別は `--status-todo/doing/done`（`bg-status-*`）のグレーの濃淡で表す。色相のある色は使わない。エラー表示（`text-destructive` / `Alert variant="destructive"`）のみ赤を許可する。
 - 破壊的操作（削除など）のボタンも色では強調せず、確認ダイアログで防ぐ。
 - ダークモードはテーマ変数に任せ、`dark:` の個別指定は原則書かない（`.dark` クラス方式）。
-- 看板の3列（未着手・進行中・完了）は常に横並び（`grid-cols-3`）。狭い画面では縦に積まず、列に最小幅を持たせて横スクロールにする。
+- 看板の3列（未着手・進行中・完了）は画面幅によらず縦に積む（`grid-cols-1`）。
 - カード・列は `Card` / `bg-muted/50` + 角丸（`rounded-xl`）で統一し、余白は Tailwind の `gap-*` / `p-*` で揃える。アイコンは lucide、ボタン内は `<Icon />` + ラベルの形にする。
 - フォーム項目は `Label` の `htmlFor` と入力の `id`（`useId`）で関連付ける。アイコンのみのボタンには `aria-label` を付ける。
 - UI 変更後は Playwright MCP でデスクトップ幅・モバイル幅・ダークの表示と主要操作（追加・編集・削除）を確認する。
