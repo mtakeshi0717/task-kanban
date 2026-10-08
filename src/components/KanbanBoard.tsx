@@ -9,9 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createTask, deleteTask, fetchTasks, taskStatuses, updateTask } from "@/lib/tasks";
+import { createTask, deleteTask, fetchTasks, updateTask } from "@/lib/tasks";
 import type { Task, TaskInput, TaskStatus } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
+
+const columnStatuses: TaskStatus[] = ["doing", "todo", "done"];
 
 const statusDotClass: Record<TaskStatus, string> = {
   todo: "bg-status-todo",
@@ -113,7 +115,7 @@ export default function KanbanBoard() {
       )}
 
       <div className="grid max-w-md grid-cols-1 gap-4">
-        {taskStatuses.map((status) => {
+        {columnStatuses.map((status) => {
           const columnTasks = tasks.filter((task) => task.status === status);
           return (
             <section
